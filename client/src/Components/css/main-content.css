@@ -1,0 +1,48 @@
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  margin-left: 220px; /* Default sidebar width */
+  transition: margin-left 0.3s ease;
+  margin-top: 55px;
+}
+
+/* Adjust margin when sidebar is collapsed */
+.sidebar.collapsed ~ .main-content {
+  margin-left: 60px;
+}
+
+/* Page Content Container */
+.page-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Dashboard Specific Styles */
+.dashboard-content {
+  width: 100%;
+  padding: 0;
+}
+
+/* Section Headers */
+.section-title {
+  color: #333;
+  margin: 20px 0 30px 0;
+  text-align: left;
+  font-size: 1.8rem;
+  font-weight: 600;
+  width: 100%;
+}
+
+.dark .section-title {
+  color: #fff;
+}

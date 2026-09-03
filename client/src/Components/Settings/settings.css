@@ -1,0 +1,346 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+.settings-container {
+  background: linear-gradient(135deg, #f9fafb, #eef2ff);
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.settings-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+  font-size: 2rem;
+  color: #1e3a8a;
+}
+
+.settings-header p {
+  color: #4b5563;
+}
+
+.settings-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+.form-type-button {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.form-type-button:hover {
+  background: #f3f4f6;
+}
+
+.form-type-button.active {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1e3a8a;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.field-item {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+.field-item:hover {
+  border-color: #93c5fd;
+  background: #f9fafb;
+}
+
+.field-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+.field-actions button:hover {
+  transform: scale(1.2);
+}
+
+.required-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.5rem;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.ai-dialog {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.ai-dialog h3 {
+  font-size: 1.25rem;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.settings-dashboard {
+  background: linear-gradient(135deg, #eef2ff, #f9fafb);
+  min-height: 100vh;
+  text-align: center;
+  padding: 3rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+.settings-container {
+  background: linear-gradient(135deg, #f9fafb, #eef2ff);
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.settings-dashboard {
+  text-align: center;
+  background: linear-gradient(135deg, #eef2ff, #f9fafb);
+  min-height: 100vh;
+  padding: 3rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.settings-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.settings-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+.settings-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-type-button {
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  transition: 0.3s;
+}
+
+.form-type-button:hover {
+  background: #f3f4f6;
+}
+
+.form-type-button.active {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1e3a8a;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.75rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.6rem 1.25rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+}
+
+.field-item {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: all 0.3s ease;
+}
+
+.field-item:hover {
+  background: #f9fafb;
+  border-color: #93c5fd;
+}
+
+.required-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.form-group.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-group.toggle input {
+  width: 20px;
+  height: 20px;
+}

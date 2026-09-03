@@ -1,0 +1,332 @@
+/* Forms */
+/* ✅ Universal form container for all 'Add' forms */
+.add-form {
+  width: 100%;
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 25px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.dark .add-form {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+/* ✅ Title styling */
+.add-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.dark .add-form h2 {
+  color: #fff;
+}
+
+/* ✅ Row layout for multi-column structure */
+/* 🌟 Main Form Container */
+.add-form {
+  max-width: 1200px;
+  margin: 1px auto;
+  margin-left: 10px;
+  padding: 25px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
+}
+
+.dark .add-form {
+  background: #222;
+  color: #fff;
+}
+
+/* 🌟 Title */
+.add-form h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #333;
+}
+
+.dark .add-form h2 {
+  color: #eee;
+}
+
+/* 🌟 Row Container */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap:25px;
+}
+
+/* 🌟 Each input group (label + field) */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 calc(50% - 20px); /* 2 columns by default */
+  min-width: 250px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+}
+
+.dark .form-group label {
+  color: #ccc;
+}
+
+/* 🌟 Input, Select, Textarea styling */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* 🌙 Dark mode for input fields */
+.dark .form-group input,
+.dark .form-group select,
+.dark .form-group textarea {
+  background-color: #333;
+  border-color: #444;
+  color: white;
+}
+
+/* 🌟 Submit Button */
+.submit-button {
+  background: #3498db;
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background 0.3s ease;
+}
+
+.submit-button:hover {
+  background: #2980b9;
+}
+
+/* 🌙 Dark Mode Button */
+.dark .submit-button {
+  background: #2980b9;
+}
+
+.dark .submit-button:hover {
+  background: #1f6391;
+}
+
+/* 🌟 Table styling (if you have data table below the form) */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  font-size: 15px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.data-table th {
+  background: #3498db;
+  color: white;
+}
+
+.data-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+/* 🌙 Dark Mode Table */
+.dark .data-table th {
+  background: #2980b9;
+}
+
+.dark .data-table td {
+  background: #333;
+  color: #eee;
+}
+
+/* 🌟 Responsive behavior */
+@media (max-width: 768px) {
+  .add-form {
+    margin: 15px auto;
+    padding: 15px;
+  }
+
+  .form-group {
+    flex: 1 1 100%; /* One column on mobile */
+    min-width: 100%;
+  }
+
+  .form-row {
+    gap: 15px;
+  }
+
+  .submit-button {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .data-table {
+    font-size: 14px;
+  }
+
+  .data-table td,
+  .data-table th {
+    padding: 8px;
+  }
+}
+
+/* 🌟 Large screens (3-column layout) */
+@media (min-width: 1200px) {
+  .form-group {
+    flex: 1 1 calc(33.33% - 20px);
+  }
+}
+
+/* Add forms use two panels, with two fields per row on larger screens. */
+.add-form-sections {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+.add-form-sections > * {
+  min-width: 0;
+}
+
+.add-form .form-row {
+  gap: 16px;
+}
+
+.add-form .form-row .form-group {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .add-form-sections {
+    gap: 20px;
+  }
+
+  .add-form .form-row .form-group {
+    flex-basis: 100%;
+  }
+}
+
+
+/* ✅ Full-width textarea (optional) */
+textarea {
+  resize: vertical;
+}
+
+/* ✅ Submit button styling */
+.submit-button {
+  display: block;
+  width: 200px;
+  margin: 30px auto 0;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  background-color: #3498db;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #2980b9;
+}
+
+.dark .submit-button {
+  background-color: #1e90ff;
+}
+
+.dark .submit-button:hover {
+  background-color: #0078d7;
+}
+
+/* Buttons in forms */
+.add-customer-form button,
+.followup-form button,
+.order-form button {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.add-customer-form button:hover,
+.followup-form button:hover,
+.order-form button:hover {
+  background-color: #2980b9;
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.data-table thead th {
+  background: #34495e;
+  color: white;
+  padding: 15px 12px;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.data-table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #ecf0f1;
+  color: #2c3e50;
+}
+
+.data-table tbody tr:hover { background: #f8f9fa; }
+
+.dark .data-table { background: #2d2d2d; }
+.dark .data-table thead th { background: #1a252f; }
+.dark .data-table tbody td { 
+  color: #ecf0f1; 
+  border-bottom-color: #34495e; 
+}
+.dark .data-table tbody tr:hover { background: #34495e; }

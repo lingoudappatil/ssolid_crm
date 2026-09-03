@@ -1,0 +1,233 @@
+/* Top Bar */
+.top-bar {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  color: white;
+  position: fixed; /* changed from sticky to fixed */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  flex-wrap: wrap;
+}
+
+.top-bar.light { background-color: #333; }
+.top-bar.dark { background-color: #222; }
+
+/* Search Bar */
+.search-container {
+  position: relative; /* changed from absolute to relative */
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.search-bar {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+}
+
+/* Buttons */
+.sidebar-toggle,
+.dark-mode-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.dark-mode-button {
+  margin-left: 20px;
+  padding: 5px 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .top-bar {
+    height: auto;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .search-container {
+    width: 100%;
+    order: 2;
+    justify-content: center;
+  }
+
+  .search-bar {
+    width: 100%;
+    max-width: none;
+  }
+
+  .top-bar-title {
+    font-size: 1.1rem;
+    margin-right: auto;
+  }
+}
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  height: 100vh; /* Full height of viewport */
+  background-color: #222;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;  /* ✅ Sidebar stays fixed, no movement */
+  top: 0;           /* Stick to top of page */
+  left: 0;          /* Stick to left side */
+  transition: width 0.3s ease;
+  overflow-y: auto; /* Scroll inside sidebar if content overflows */
+  z-index: 100;     /* Keep it above other elements */
+}
+
+/* Collapsed / Expanded States */
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.sidebar.expanded {
+  width: 220px;
+}
+
+/* Rest styles */
+.sidebar .logo {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.sidebar-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-list-item {
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-list-item.active {
+  background-color: #555;
+}
+
+.sidebar-list-item:hover {
+  background: #444;
+}
+
+/* Submenu */
+.submenu {
+  padding-left: 16px;
+}
+
+.sidebar-subitem {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.sidebar-subitem.active {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  margin-left: 220px; /* Default sidebar width */
+  transition: margin-left 0.3s ease;
+  margin-top: 55px;
+}
+
+/* Adjust margin when sidebar is collapsed */
+.sidebar.collapsed ~ .main-content {
+  margin-left: 60px;
+}
+
+/* Page Content Container */
+.page-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Dashboard Specific Styles */
+.dashboard-content {
+  width: 100%;
+  padding: 0;
+}
+
+/* Section Headers */
+.section-title {
+  color: #333;
+  margin: 20px 0 30px 0;
+  text-align: left;
+  font-size: 1.8rem;
+  font-weight: 600;
+  width: 100%;
+}
+
+.dark .section-title {
+  color: #fff;
+}
+
+
+
+/* Main CSS File - Imports all other files */
+@import url('base.css');
+@import url('top-bar.css');
+@import url('sidebar.css');
+@import url('main-content.css');
+@import url('components.css');
+@import url('forms-tables.css');
+@import url('responsive.css');
+
+/* Additional global styles that don't fit elsewhere */
+.content-card {
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+.dark .content-card { background: #2d2d2d; }
+
+.simple-list { list-style: none; padding-left: 0; }
+
+/* Marquee */
+.marquee-wrapper {
+  width: 100%;
+  background-color: transparent;
+  text-align: center;
+  padding: 5px 0;
+  margin-top: 10px;
+}
+
+.marquee {
+  color: black;
+  font-size: 16px;
+  font-weight: bold;
+}

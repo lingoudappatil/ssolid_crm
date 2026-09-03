@@ -1,0 +1,23 @@
+/* Container */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+  display: flex;
+  flex-grow: 1;
+  height: auto;
+}
+
+/* Utility Classes */
+.full-width { width: 100%; }
+.auto-width { width: auto; }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.mt-20 { margin-top: 20px; }
+.mb-20 { margin-bottom: 20px; }
+.p-20 { padding: 20px; }

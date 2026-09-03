@@ -1,0 +1,70 @@
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  height: 100vh; /* Full height of viewport */
+  background-color: #222;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: fixed;  /* ✅ Sidebar stays fixed, no movement */
+  top: 0;           /* Stick to top of page */
+  left: 0;          /* Stick to left side */
+  transition: width 0.3s ease;
+  overflow-y: auto; /* Scroll inside sidebar if content overflows */
+  z-index: 100;     /* Keep it above other elements */
+}
+
+/* Collapsed / Expanded States */
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.sidebar.expanded {
+  width: 195px;
+}
+
+/* Rest styles */
+.sidebar .logo {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.sidebar-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-list-item {
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-list-item.active {
+  background-color: #555;
+}
+
+.sidebar-list-item:hover {
+  background: #444;
+}
+
+/* Submenu */
+.submenu {
+  padding-left: 16px;
+}
+
+.sidebar-subitem {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.sidebar-subitem.active {
+  background: rgba(255, 255, 255, 0.08);
+}

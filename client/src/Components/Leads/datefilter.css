@@ -1,0 +1,56 @@
+.date-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.date-filter-container label {
+  font-size: 14px;
+  color: #c5c3c3;
+    margin-right: 4px;
+}
+
+.date-input {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  font-size: 14px;
+}
+
+.date-input:focus {
+  border-color: #7c8288;
+}
+
+.apply-btn,
+.clear-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.apply-btn {
+  background-color: #abc1d8;
+  color: white;
+}
+
+.apply-btn:hover {
+  background-color: #9d9ea0;
+}
+
+.clear-btn {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.clear-btn:hover {
+  background-color: #d6d6d6;
+}
