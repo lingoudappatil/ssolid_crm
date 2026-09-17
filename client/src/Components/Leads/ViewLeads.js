@@ -1,6 +1,7 @@
 // client/src/Components/Leads/ViewLeads.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import DateFilter from "./datefilter";
+import Papa from "papaparse";
 import "./ViewLeads.css";
 
 const ViewLeads = ({ refreshTrigger, onEdit }) => {
@@ -19,10 +20,210 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const perPage = 8;
-    const leadSources = ["Friend", "Walk In", "Social Media", "Other"];
+  const fileInputRef = useRef(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const leadSources = ["Friend", "Walk In", "Social Media", "Other"];
+
 
 
   const base = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+  const getImportErrorMessage = (data, fallback) => {
+    if (!data) return fallback;
+    if (typeof data.error === "string") return data.error;
+    if (typeof data.message === "string") return data.message;
+    if (typeof data.details === "string") return data.details;
+    if (Array.isArray(data.details)) {
+      return data.details
+        .map((detail) => detail.reason || detail.message || String(detail))
+        .join("; ");
+    }
+    return fallback;
+  };
+
+  const normalizeImportResult = (data, totalFallback) => {
+    const errors = Array.isArray(data?.errors)
+      ? data.errors
+      : Array.isArray(data?.failedRows)
+        ? data.failedRows
+        : Array.isArray(data?.errorDetails)
+          ? data.errorDetails
+          : [];
+
+    const total = Number(data?.total ?? totalFallback ?? 0);
+    const inserted = Number(
+      data?.inserted ?? data?.imported ?? data?.successCount ?? 0
+    );
+    const failed = Number(
+      data?.failed ?? data?.failedCount ?? errors.length
+    );
+
+    return {
+      total: Number.isFinite(total) ? total : 0,
+      inserted: Number.isFinite(inserted) ? inserted : 0,
+      failed: Number.isFinite(failed) ? failed : errors.length,
+      errors: errors.map((error) => ({
+        row: error.row ?? error.rowNumber ?? error.line ?? "-",
+        name: error.name ?? error.leadName ?? error.lead?.name ?? "",
+        reason: error.reason ?? error.message ?? error.error ?? "Import failed"
+      }))
+    };
+  };
+
+  // =================== BULK CSV IMPORT ===================
+
+  const handleFileImport = (event) => {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    // Only CSV files are allowed
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      alert("❌ Please select a CSV file only.");
+      event.target.value = "";
+      return;
+    }
+
+    setImporting(true);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim().replace(/^\uFEFF/, ""),
+
+      complete: async (results) => {
+        try {
+          if (results.errors && results.errors.length > 0) {
+            const parseMessage = results.errors
+              .map((parseError) => parseError.message)
+              .join("; ");
+            throw new Error(parseMessage || "CSV parsing failed");
+          }
+
+          const rows = results.data || [];
+
+          if (rows.length === 0) {
+            throw new Error("The CSV file is empty.");
+          }
+
+          // Convert CSV values into the backend format
+          const leadsToImport = rows.map((row) => ({
+            name: row.name?.trim() || "",
+            email: row.email?.trim() || "",
+            phone: row.phone?.trim() || "",
+            address: row.address?.trim() || "",
+            state: row.state?.trim() || "",
+            source: row.source?.trim() || "",
+            status: row.status?.trim() || "New",
+            customFields: {}
+          }));
+
+          const token = localStorage.getItem("token");
+
+          const response = await fetch(
+            `${base.replace(/\/$/, "")}/api/leads/bulk-import`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token
+                  ? { Authorization: `Bearer ${token}` }
+                  : {})
+              },
+              body: JSON.stringify({
+                leads: leadsToImport
+              })
+            }
+          );
+
+          let data = {};
+          try {
+            data = await response.json();
+          } catch {
+            throw new Error(`Server returned HTTP ${response.status}.`);
+          }
+
+          if (!response.ok) {
+            throw new Error(
+              getImportErrorMessage(
+                data,
+                response.status === 401 || response.status === 403
+                  ? "You are not authorized to import leads."
+                  : `Bulk import failed (HTTP ${response.status}).`
+              )
+            );
+          }
+
+          setImportResult(normalizeImportResult(data, rows.length));
+
+          // Refresh after storing the result so it cannot hide the report.
+          await fetchData();
+
+        } catch (error) {
+          console.error("CSV import error:", error);
+          alert(`❌ ${error.message}`);
+        } finally {
+          setImporting(false);
+
+          // Reset file input so the same file can be selected again
+          if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+      },
+
+      error: (error) => {
+        console.error("CSV parsing failed:", error);
+        alert(`❌ ${error.message || "Failed to read the CSV file."}`);
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    });
+  };
+
+  // =================== DOWNLOAD CSV TEMPLATE ===================
+
+  const handleDownloadTemplate = () => {
+    const headers = [
+      "name",
+      "email",
+      "phone",
+      "address",
+      "state",
+      "source",
+      "status"
+    ];
+
+    const exampleRow = [
+      "Rahul Patil",
+      "rahul@example.com",
+      "9876543210",
+      "Bangalore",
+      "Karnataka",
+      "Friend",
+      "New"
+    ];
+
+    const csvContent = [
+      headers.join(","),
+      exampleRow.join(",")
+    ].join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "leads_import_template.csv");
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
 
   // ✅ Fetch all leads
   const fetchData = async () => {
@@ -104,7 +305,7 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
     // Get button position
     const button = event.currentTarget;
     const rect = button.getBoundingClientRect();
-    
+
     // Position dropdown below the button, aligned to right edge
     setDropdownPos({
       top: rect.bottom + 5,
@@ -300,6 +501,46 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
 
           {/* Date Filter */}
           <DateFilter onFilter={handleDateFilter} />
+
+          {/* Hidden CSV File Input */}
+          <input
+            type="file"
+            accept=".csv"
+            ref={fileInputRef}
+            onChange={handleFileImport}
+            style={{ display: "none" }}
+          />
+          {/* Download CSV Template Button */}
+          <button
+            onClick={handleDownloadTemplate}
+            style={{
+              backgroundColor: "#6f42c1",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "6px 12px",
+              cursor: "pointer",
+            }}
+          >
+            📄 Template
+          </button>
+
+          {/* Import CSV Button */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            style={{
+              backgroundColor: importing ? "#6c757d" : "#198754",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "6px 12px",
+              cursor: importing ? "not-allowed" : "pointer",
+            }}
+          >
+            {importing ? "⏳ Importing..." : "📥 Import CSV"}
+          </button>
+
 
           {/* Refresh Button */}
           <button
@@ -544,14 +785,14 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
           <div
             style={{
               backgroundColor: "white",
-    borderRadius: "8px",
-    padding: "20px",
-    width: "500px",
-    maxWidth: "90vw",
-    maxHeight: "80vh",
-    overflowY: "auto",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  }}
+              borderRadius: "8px",
+              padding: "20px",
+              width: "500px",
+              maxWidth: "90vw",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 style={{ marginTop: 0 }}>Edit Lead</h3>
@@ -611,20 +852,20 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
               />
             </div>
             <div style={{ marginBottom: "10px" }}>
-<label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
+              <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
                 Source:
               </label>              <select
-                  name="Source"
-                  value={editFormData.Source}
-                  onChange={(e) => setEditFormData({ ...editFormData, source: e.target.value })}
-                  className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Source Type</option>
-                  {leadSources.map((src, i) => (
-                    <option key={i} value={src}>{src}</option>
-                  ))}
-                </select>
+                name="Source"
+                value={editFormData.Source}
+                onChange={(e) => setEditFormData({ ...editFormData, source: e.target.value })}
+                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select Source Type</option>
+                {leadSources.map((src, i) => (
+                  <option key={i} value={src}>{src}</option>
+                ))}
+              </select>
 
             </div>
             <div style={{ marginBottom: "10px" }}>
@@ -738,6 +979,315 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* =================== IMPORT RESULT MODAL =================== */}
+      {importResult && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(0, 0, 0, 0.45)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 9999,
+                padding: "20px",
+              }}
+            >
+              <div
+                style={{
+                  backgroundColor: "white",
+                  width: "100%",
+                  maxWidth: "650px",
+                  maxHeight: "85vh",
+                  overflowY: "auto",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
+                  padding: "24px",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "22px",
+                      color: "#212529",
+                    }}
+                  >
+                    CSV Import Result
+                  </h2>
+
+                  <button
+                    onClick={() => setImportResult(null)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      color: "#6c757d",
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Summary Cards */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: "12px",
+                    marginBottom: "24px",
+                  }}
+                >
+                  {/* Total */}
+                  <div
+                    style={{
+                      backgroundColor: "#e9ecef",
+                      borderRadius: "8px",
+                      padding: "15px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "#6c757d",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Total Records
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "26px",
+                        fontWeight: "700",
+                        color: "#343a40",
+                      }}
+                    >
+                      {importResult.total}
+                    </div>
+                  </div>
+
+                  {/* Inserted */}
+                  <div
+                    style={{
+                      backgroundColor: "#d1e7dd",
+                      borderRadius: "8px",
+                      padding: "15px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "#146c43",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Imported
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "26px",
+                        fontWeight: "700",
+                        color: "#146c43",
+                      }}
+                    >
+                      {importResult.inserted}
+                    </div>
+                  </div>
+
+                  {/* Failed */}
+                  <div
+                    style={{
+                      backgroundColor:
+                        importResult.failed > 0 ? "#f8d7da" : "#d1e7dd",
+                      borderRadius: "8px",
+                      padding: "15px",
+                      textAlign: "center",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color:
+                          importResult.failed > 0 ? "#842029" : "#146c43",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Failed
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: "26px",
+                        fontWeight: "700",
+                        color:
+                          importResult.failed > 0 ? "#842029" : "#146c43",
+                      }}
+                    >
+                      {importResult.failed}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Failed Records Section */}
+                {importResult.errors &&
+                  importResult.errors.length > 0 && (
+                    <div>
+                      <h3
+                        style={{
+                          fontSize: "17px",
+                          marginBottom: "12px",
+                          color: "#842029",
+                        }}
+                      >
+                        Failed Records
+                      </h3>
+
+                      <div
+                        style={{
+                          border: "1px solid #dee2e6",
+                          borderRadius: "8px",
+                          overflowX: "auto",
+                        }}
+                      >
+                        <table
+                          style={{
+                            width: "100%",
+                            borderCollapse: "collapse",
+                            minWidth: "450px",
+                          }}
+                        >
+                          <thead>
+                            <tr
+                              style={{
+                                backgroundColor: "#f8f9fa",
+                              }}
+                            >
+                              <th
+                                style={{
+                                  padding: "10px",
+                                  borderBottom: "1px solid #dee2e6",
+                                  textAlign: "left",
+                                }}
+                              >
+                                Row
+                              </th>
+
+                              <th
+                                style={{
+                                  padding: "10px",
+                                  borderBottom: "1px solid #dee2e6",
+                                  textAlign: "left",
+                                }}
+                              >
+                                Name
+                              </th>
+
+                              <th
+                                style={{
+                                  padding: "10px",
+                                  borderBottom: "1px solid #dee2e6",
+                                  textAlign: "left",
+                                }}
+                              >
+                                Reason
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {importResult.errors.map((error, index) => (
+                              <tr key={index}>
+                                <td
+                                  style={{
+                                    padding: "10px",
+                                    borderBottom: "1px solid #eee",
+                                  }}
+                                >
+                                  {error.row}
+                                </td>
+
+                                <td
+                                  style={{
+                                    padding: "10px",
+                                    borderBottom: "1px solid #eee",
+                                  }}
+                                >
+                                  {error.name || "-"}
+                                </td>
+
+                                <td
+                                  style={{
+                                    padding: "10px",
+                                    borderBottom: "1px solid #eee",
+                                    color: "#842029",
+                                  }}
+                                >
+                                  {error.reason}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                {/* No Errors Message */}
+                {(!importResult.errors ||
+                  importResult.errors.length === 0) && (
+                    <div
+                      style={{
+                        backgroundColor: "#d1e7dd",
+                        color: "#146c43",
+                        padding: "14px",
+                        borderRadius: "8px",
+                        marginBottom: "20px",
+                      }}
+                    >
+                      All records were imported successfully.
+                    </div>
+                  )}
+
+                {/* Close Button */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "24px",
+                  }}
+                >
+                  <button
+                    onClick={() => setImportResult(null)}
+                    style={{
+                      backgroundColor: "#0d6efd",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      padding: "9px 20px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
       )}
     </div>
   );

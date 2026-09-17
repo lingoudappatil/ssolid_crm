@@ -1,3 +1,4 @@
+// server/repositories/leadRepository.js
 import pool from "../config/db.js";
 
 // =================== CREATE LEAD ===================
@@ -371,6 +372,72 @@ export const deleteLeadById = async (id) => {
       id: Number(id),
       deleted: true
     };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+// =================== BULK CREATE LEADS ===================
+
+export const bulkCreateLeads = async (leads) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    let inserted = 0;
+
+    for (const lead of leads) {
+      const {
+        name,
+        email,
+        phone,
+        address,
+        state,
+        source,
+        status,
+        customFields
+      } = lead;
+
+      await connection.execute(
+        `
+          INSERT INTO leads
+          (
+            name,
+            email,
+            phone,
+            address,
+            state,
+            source,
+            status,
+            custom_fields
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          name,
+          email,
+          phone,
+          address,
+          state,
+          source,
+          status || "New",
+          JSON.stringify(customFields || {})
+        ]
+      );
+
+      inserted++;
+    }
+
+    await connection.commit();
+
+    return {
+      inserted
+    };
+
   } catch (error) {
     await connection.rollback();
     throw error;

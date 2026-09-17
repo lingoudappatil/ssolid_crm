@@ -4,7 +4,8 @@ import {
   create,
   getAll,
   update,
-  remove
+  remove,
+  bulkImport
 } from "../controllers/leadController.js";
 
 const router = express.Router();
@@ -25,5 +26,7 @@ router.put("/:id", update);
 // DELETE /api/leads/:id
 router.delete("/:id", remove);
 
+// POST /api/leads/bulk-import
+router.post("/bulk-import", bulkImport);
 
 export default router;

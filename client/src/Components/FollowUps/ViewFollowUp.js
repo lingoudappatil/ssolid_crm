@@ -129,6 +129,7 @@ export default function ViewFollowUps() {
           )}
         </tbody>
       </table>
+      
     </div>
   );
 }

@@ -2,7 +2,8 @@ import {
   addLead,
   getLeads,
   updateLead,
-  deleteLead
+  deleteLead,
+    bulkImportLeads 
 } from "../services/leadService.js";
 
 
@@ -91,6 +92,34 @@ export const remove = async (req, res) => {
     const statusCode = error.message === "Lead not found" ? 404 : 400;
 
     res.status(statusCode).json({
+      error: error.message
+    });
+  }
+};
+
+// =================== BULK IMPORT LEADS ===================
+
+export const bulkImport = async (req, res) => {
+  try {
+    const { leads } = req.body;
+
+    if (!Array.isArray(leads) || leads.length === 0) {
+      return res.status(400).json({
+        error: "No leads provided for import"
+      });
+    }
+
+    const result = await bulkImportLeads(leads);
+
+    res.status(200).json({
+      message: "Bulk import completed successfully!",
+      ...result
+    });
+
+  } catch (error) {
+    console.error("Error importing leads in bulk:", error);
+
+    res.status(500).json({
       error: error.message
     });
   }
