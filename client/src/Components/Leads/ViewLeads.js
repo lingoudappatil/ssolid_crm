@@ -854,9 +854,10 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
             <div style={{ marginBottom: "10px" }}>
               <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold" }}>
                 Source:
-              </label>              <select
-                name="Source"
-                value={editFormData.Source}
+              </label>              
+              <select
+                name="source"
+                value={editFormData.source}
                 onChange={(e) => setEditFormData({ ...editFormData, source: e.target.value })}
                 className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
@@ -983,311 +984,311 @@ const ViewLeads = ({ refreshTrigger, onEdit }) => {
 
       {/* =================== IMPORT RESULT MODAL =================== */}
       {importResult && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              width: "100%",
+              maxWidth: "650px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
+              padding: "24px",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
             <div
               style={{
-                position: "fixed",
-                inset: 0,
-                backgroundColor: "rgba(0, 0, 0, 0.45)",
                 display: "flex",
-                justifyContent: "center",
+                justifyContent: "space-between",
                 alignItems: "center",
-                zIndex: 9999,
-                padding: "20px",
+                marginBottom: "20px",
               }}
             >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "22px",
+                  color: "#212529",
+                }}
+              >
+                CSV Import Result
+              </h2>
+
+              <button
+                onClick={() => setImportResult(null)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#6c757d",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Summary Cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "12px",
+                marginBottom: "24px",
+              }}
+            >
+              {/* Total */}
               <div
                 style={{
-                  backgroundColor: "white",
-                  width: "100%",
-                  maxWidth: "650px",
-                  maxHeight: "85vh",
-                  overflowY: "auto",
-                  borderRadius: "12px",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.25)",
-                  padding: "24px",
+                  backgroundColor: "#e9ecef",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  textAlign: "center",
                 }}
-                onClick={(e) => e.stopPropagation()}
               >
-                {/* Modal Header */}
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "20px",
+                    fontSize: "13px",
+                    color: "#6c757d",
+                    marginBottom: "6px",
                   }}
                 >
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontSize: "22px",
-                      color: "#212529",
-                    }}
-                  >
-                    CSV Import Result
-                  </h2>
-
-                  <button
-                    onClick={() => setImportResult(null)}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      fontSize: "24px",
-                      cursor: "pointer",
-                      color: "#6c757d",
-                    }}
-                  >
-                    ×
-                  </button>
+                  Total Records
                 </div>
 
-                {/* Summary Cards */}
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: "12px",
-                    marginBottom: "24px",
+                    fontSize: "26px",
+                    fontWeight: "700",
+                    color: "#343a40",
                   }}
                 >
-                  {/* Total */}
-                  <div
-                    style={{
-                      backgroundColor: "#e9ecef",
-                      borderRadius: "8px",
-                      padding: "15px",
-                      textAlign: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color: "#6c757d",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Total Records
-                    </div>
+                  {importResult.total}
+                </div>
+              </div>
 
-                    <div
-                      style={{
-                        fontSize: "26px",
-                        fontWeight: "700",
-                        color: "#343a40",
-                      }}
-                    >
-                      {importResult.total}
-                    </div>
-                  </div>
-
-                  {/* Inserted */}
-                  <div
-                    style={{
-                      backgroundColor: "#d1e7dd",
-                      borderRadius: "8px",
-                      padding: "15px",
-                      textAlign: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color: "#146c43",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Imported
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: "26px",
-                        fontWeight: "700",
-                        color: "#146c43",
-                      }}
-                    >
-                      {importResult.inserted}
-                    </div>
-                  </div>
-
-                  {/* Failed */}
-                  <div
-                    style={{
-                      backgroundColor:
-                        importResult.failed > 0 ? "#f8d7da" : "#d1e7dd",
-                      borderRadius: "8px",
-                      padding: "15px",
-                      textAlign: "center",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "13px",
-                        color:
-                          importResult.failed > 0 ? "#842029" : "#146c43",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Failed
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: "26px",
-                        fontWeight: "700",
-                        color:
-                          importResult.failed > 0 ? "#842029" : "#146c43",
-                      }}
-                    >
-                      {importResult.failed}
-                    </div>
-                  </div>
+              {/* Inserted */}
+              <div
+                style={{
+                  backgroundColor: "#d1e7dd",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#146c43",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Imported
                 </div>
 
-                {/* Failed Records Section */}
-                {importResult.errors &&
-                  importResult.errors.length > 0 && (
-                    <div>
-                      <h3
-                        style={{
-                          fontSize: "17px",
-                          marginBottom: "12px",
-                          color: "#842029",
-                        }}
-                      >
-                        Failed Records
-                      </h3>
-
-                      <div
-                        style={{
-                          border: "1px solid #dee2e6",
-                          borderRadius: "8px",
-                          overflowX: "auto",
-                        }}
-                      >
-                        <table
-                          style={{
-                            width: "100%",
-                            borderCollapse: "collapse",
-                            minWidth: "450px",
-                          }}
-                        >
-                          <thead>
-                            <tr
-                              style={{
-                                backgroundColor: "#f8f9fa",
-                              }}
-                            >
-                              <th
-                                style={{
-                                  padding: "10px",
-                                  borderBottom: "1px solid #dee2e6",
-                                  textAlign: "left",
-                                }}
-                              >
-                                Row
-                              </th>
-
-                              <th
-                                style={{
-                                  padding: "10px",
-                                  borderBottom: "1px solid #dee2e6",
-                                  textAlign: "left",
-                                }}
-                              >
-                                Name
-                              </th>
-
-                              <th
-                                style={{
-                                  padding: "10px",
-                                  borderBottom: "1px solid #dee2e6",
-                                  textAlign: "left",
-                                }}
-                              >
-                                Reason
-                              </th>
-                            </tr>
-                          </thead>
-
-                          <tbody>
-                            {importResult.errors.map((error, index) => (
-                              <tr key={index}>
-                                <td
-                                  style={{
-                                    padding: "10px",
-                                    borderBottom: "1px solid #eee",
-                                  }}
-                                >
-                                  {error.row}
-                                </td>
-
-                                <td
-                                  style={{
-                                    padding: "10px",
-                                    borderBottom: "1px solid #eee",
-                                  }}
-                                >
-                                  {error.name || "-"}
-                                </td>
-
-                                <td
-                                  style={{
-                                    padding: "10px",
-                                    borderBottom: "1px solid #eee",
-                                    color: "#842029",
-                                  }}
-                                >
-                                  {error.reason}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                {/* No Errors Message */}
-                {(!importResult.errors ||
-                  importResult.errors.length === 0) && (
-                    <div
-                      style={{
-                        backgroundColor: "#d1e7dd",
-                        color: "#146c43",
-                        padding: "14px",
-                        borderRadius: "8px",
-                        marginBottom: "20px",
-                      }}
-                    >
-                      All records were imported successfully.
-                    </div>
-                  )}
-
-                {/* Close Button */}
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "24px",
+                    fontSize: "26px",
+                    fontWeight: "700",
+                    color: "#146c43",
                   }}
                 >
-                  <button
-                    onClick={() => setImportResult(null)}
-                    style={{
-                      backgroundColor: "#0d6efd",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "6px",
-                      padding: "9px 20px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Close
-                  </button>
+                  {importResult.inserted}
+                </div>
+              </div>
+
+              {/* Failed */}
+              <div
+                style={{
+                  backgroundColor:
+                    importResult.failed > 0 ? "#f8d7da" : "#d1e7dd",
+                  borderRadius: "8px",
+                  padding: "15px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color:
+                      importResult.failed > 0 ? "#842029" : "#146c43",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Failed
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "26px",
+                    fontWeight: "700",
+                    color:
+                      importResult.failed > 0 ? "#842029" : "#146c43",
+                  }}
+                >
+                  {importResult.failed}
                 </div>
               </div>
             </div>
+
+            {/* Failed Records Section */}
+            {importResult.errors &&
+              importResult.errors.length > 0 && (
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "17px",
+                      marginBottom: "12px",
+                      color: "#842029",
+                    }}
+                  >
+                    Failed Records
+                  </h3>
+
+                  <div
+                    style={{
+                      border: "1px solid #dee2e6",
+                      borderRadius: "8px",
+                      overflowX: "auto",
+                    }}
+                  >
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        minWidth: "450px",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            backgroundColor: "#f8f9fa",
+                          }}
+                        >
+                          <th
+                            style={{
+                              padding: "10px",
+                              borderBottom: "1px solid #dee2e6",
+                              textAlign: "left",
+                            }}
+                          >
+                            Row
+                          </th>
+
+                          <th
+                            style={{
+                              padding: "10px",
+                              borderBottom: "1px solid #dee2e6",
+                              textAlign: "left",
+                            }}
+                          >
+                            Name
+                          </th>
+
+                          <th
+                            style={{
+                              padding: "10px",
+                              borderBottom: "1px solid #dee2e6",
+                              textAlign: "left",
+                            }}
+                          >
+                            Reason
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {importResult.errors.map((error, index) => (
+                          <tr key={index}>
+                            <td
+                              style={{
+                                padding: "10px",
+                                borderBottom: "1px solid #eee",
+                              }}
+                            >
+                              {error.row}
+                            </td>
+
+                            <td
+                              style={{
+                                padding: "10px",
+                                borderBottom: "1px solid #eee",
+                              }}
+                            >
+                              {error.name || "-"}
+                            </td>
+
+                            <td
+                              style={{
+                                padding: "10px",
+                                borderBottom: "1px solid #eee",
+                                color: "#842029",
+                              }}
+                            >
+                              {error.reason}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+            {/* No Errors Message */}
+            {(!importResult.errors ||
+              importResult.errors.length === 0) && (
+                <div
+                  style={{
+                    backgroundColor: "#d1e7dd",
+                    color: "#146c43",
+                    padding: "14px",
+                    borderRadius: "8px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  All records were imported successfully.
+                </div>
+              )}
+
+            {/* Close Button */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "24px",
+              }}
+            >
+              <button
+                onClick={() => setImportResult(null)}
+                style={{
+                  backgroundColor: "#0d6efd",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "9px 20px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

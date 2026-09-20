@@ -13,7 +13,7 @@ const AddLead = ({ onLeadAdded }) => {
     phone: "",
     address: "",
     state: "",
-    Source: "",
+    source: "",
     followUpDate: "",
     followUpTime: "",
     followUpRemark: "",
@@ -39,7 +39,7 @@ const AddLead = ({ onLeadAdded }) => {
       phone: formData.phone,
       address: formData.address,
       state: formData.state,
-      Source: formData.Source,
+      source: formData.source,
       followUps: [
         {
           date: formData.followUpDate,
