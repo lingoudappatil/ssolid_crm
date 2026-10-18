@@ -2,29 +2,49 @@
 // =================== LEAD SERVICE ===================
 import {
   createLead,
-  getAllLeads,
   getLeadById,
   updateLeadById,
-  deleteLeadById
+  getAllLeads,
+  deleteLeadById,
+  restoreLeadById,
+  bulkCreateLeads
 } from "../repositories/leadRepository.js";
 
-
+import {
+  getLeadStatusById
+} from "../repositories/leadMasterRepository.js";
 // =================== CREATE LEAD ===================
 
 export const addLead = async ({
   name,
+  firstName,
+  lastName,
+  companyName,
+  jobTitle,
   email,
   phone,
+  alternatePhone,
   address,
   state,
-  source,
-  Source,
-  status,
+
+  sourceId,
+  statusId,
+  ownerId,
+
+  rating,
+  score,
+  expectedValue,
+
+  nextFollowUpAt,
+  lastContactedAt,
+  convertedAt,
+
+  lostReasonId,
+
   customFields,
   followUps
 }) => {
-
-  // Validate required fields
+  // Basic validation
   if (!name || !name.trim()) {
     throw new Error("Name is required");
   }
@@ -45,16 +65,97 @@ export const addLead = async ({
     throw new Error("State is required");
   }
 
+  // Source validation
+  if (!sourceId) {
+    throw new Error("Source is required");
+  }
+
+  // Status validation
+  if (!statusId) {
+    throw new Error("Status is required");
+  }
+
+  // Rating validation
+  if (
+    rating !== null &&
+    rating !== undefined &&
+    !["Cold", "Warm", "Hot"].includes(rating)
+  ) {
+    throw new Error("Invalid rating. Allowed values: Cold, Warm, Hot");
+  }
+
+  // Score validation
+  if (
+    score !== null &&
+    score !== undefined &&
+    (Number.isNaN(Number(score)) ||
+      Number(score) < 0 ||
+      Number(score) > 100)
+  ) {
+    throw new Error("Score must be between 0 and 100");
+  }
+
+  // Expected value validation
+  if (
+    expectedValue !== null &&
+    expectedValue !== undefined &&
+    (Number.isNaN(Number(expectedValue)) ||
+      Number(expectedValue) < 0)
+  ) {
+    throw new Error("Expected value must be a positive amount in paise");
+  }
+
+  // Lost reason validation
+  if (lostReasonId && !statusId) {
+    throw new Error("Status is required when using a lost reason");
+  }
+
   return await createLead({
     name: name.trim(),
+
+    firstName: firstName?.trim() || null,
+    lastName: lastName?.trim() || null,
+    companyName: companyName?.trim() || null,
+    jobTitle: jobTitle?.trim() || null,
+
     email: email.trim(),
     phone: phone.trim(),
+    alternatePhone: alternatePhone?.trim() || null,
+
     address: address.trim(),
     state: state.trim(),
-    source: (source || Source || "").trim(),
-    status: status || "New",
-    customFields: customFields || {},
-    followUps: Array.isArray(followUps) ? followUps : []
+
+    sourceId,
+    statusId,
+    ownerId: ownerId || null,
+
+    rating: rating || null,
+    score:
+      score !== null && score !== undefined
+        ? Number(score)
+        : null,
+
+    expectedValue:
+      expectedValue !== null && expectedValue !== undefined
+        ? Number(expectedValue)
+        : null,
+
+    nextFollowUpAt: nextFollowUpAt || null,
+    lastContactedAt: lastContactedAt || null,
+    convertedAt: convertedAt || null,
+
+    lostReasonId: lostReasonId || null,
+
+    customFields:
+      customFields &&
+      typeof customFields === "object" &&
+      !Array.isArray(customFields)
+        ? customFields
+        : {},
+
+    followUps: Array.isArray(followUps)
+      ? followUps
+      : []
   });
 };
 
@@ -191,80 +292,233 @@ if (!allowedSources.includes(source)) {
 
 // =================== GET LEADS ===================
 
-export const getLeads = async () => {
-  return await getAllLeads();
-};
+export const updateLead = async (id, data) => {
+  // -----------------------------------------
+  // 1. BASIC VALIDATION
+  // -----------------------------------------
 
-
-// =================== UPDATE LEAD ===================
-
-export const updateLead = async (id, payload) => {
-  const {
-    name,
-    email,
-    phone,
-    address,
-    state,
-    source,
-    Source,
-    status,
-    customFields,
-    followUps
-  } = payload || {};
-
-  if (!name || !name.trim()) {
-    throw new Error("Name is required");
+  if (!data.name || !data.name.trim()) {
+    throw new Error("Lead name is required");
   }
 
-  if (!email || !email.trim()) {
+  if (!data.email || !data.email.trim()) {
     throw new Error("Email is required");
   }
 
-  if (!phone || !phone.trim()) {
+  if (!data.phone || !data.phone.trim()) {
     throw new Error("Phone is required");
   }
 
-  if (!address || !address.trim()) {
+  if (!data.address || !data.address.trim()) {
     throw new Error("Address is required");
   }
 
-  if (!state || !state.trim()) {
+  if (!data.state || !data.state.trim()) {
     throw new Error("State is required");
   }
 
-  const existingLead = await getLeadById(id);
-  if (!existingLead) {
-    throw new Error("Lead not found");
+  if (!data.sourceId) {
+    throw new Error("Lead source is required");
   }
 
-  const updatedLead = await updateLeadById(id, {
-    name: name.trim(),
-    email: email.trim(),
-    phone: phone.trim(),
-    address: address.trim(),
-    state: state.trim(),
-    source: (source || Source || existingLead.source || "").trim(),
-    status: status || existingLead.status || "New",
-    customFields: customFields || existingLead.customFields || {},
-    followUps: Array.isArray(followUps) ? followUps : existingLead.followUps || []
-  });
+  if (!data.statusId) {
+    throw new Error("Lead status is required");
+  }
 
-  return updatedLead;
+
+  // -----------------------------------------
+  // 2. EMAIL VALIDATION
+  // -----------------------------------------
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(data.email.trim())) {
+    throw new Error("Invalid email format");
+  }
+
+
+  // -----------------------------------------
+  // 3. GET STATUS FROM MASTER TABLE
+  // -----------------------------------------
+
+  const status = await getLeadStatusById(data.statusId);
+
+  if (!status) {
+    throw new Error("Invalid lead status");
+  }
+
+  if (!status.is_active) {
+    throw new Error("Selected lead status is inactive");
+  }
+
+
+  // -----------------------------------------
+  // 4. STATUS = LOST
+  // LOST MUST HAVE A LOST REASON
+  // -----------------------------------------
+
+  if (status.code === "LOST" && !data.lostReasonId) {
+    throw new Error(
+      "Lost reason is required when lead status is Lost"
+    );
+  }
+
+
+  // -----------------------------------------
+  // 5. IF STATUS IS NOT LOST
+  // REMOVE LOST REASON
+  // -----------------------------------------
+
+  let lostReasonId = data.lostReasonId || null;
+
+  if (status.code !== "LOST") {
+    lostReasonId = null;
+  }
+
+
+  // -----------------------------------------
+  // 6. RATING VALIDATION
+  // -----------------------------------------
+
+  if (
+    data.rating &&
+    !["Cold", "Warm", "Hot"].includes(data.rating)
+  ) {
+    throw new Error(
+      "Rating must be Cold, Warm, or Hot"
+    );
+  }
+
+
+  // -----------------------------------------
+  // 7. SCORE VALIDATION
+  // -----------------------------------------
+
+  if (
+    data.score !== undefined &&
+    data.score !== null &&
+    (Number(data.score) < 0 || Number(data.score) > 100)
+  ) {
+    throw new Error(
+      "Lead score must be between 0 and 100"
+    );
+  }
+
+
+  // -----------------------------------------
+  // 8. EXPECTED VALUE VALIDATION
+  // -----------------------------------------
+
+  if (
+    data.expectedValue !== undefined &&
+    data.expectedValue !== null &&
+    Number(data.expectedValue) < 0
+  ) {
+    throw new Error(
+      "Expected value cannot be negative"
+    );
+  }
+
+
+  // -----------------------------------------
+  // 9. CONVERTED DATE
+  // -----------------------------------------
+
+  let convertedAt = data.convertedAt || null;
+
+  if (status.code === "CONVERTED") {
+    convertedAt = convertedAt || new Date();
+  }
+
+
+  // -----------------------------------------
+  // 10. PREPARE DATA
+  // -----------------------------------------
+
+  const updateData = {
+    name: data.name.trim(),
+
+    firstName: data.firstName || null,
+
+    lastName: data.lastName || null,
+
+    companyName: data.companyName || null,
+
+    jobTitle: data.jobTitle || null,
+
+    email: data.email.trim(),
+
+    phone: data.phone.trim(),
+
+    alternatePhone: data.alternatePhone || null,
+
+    address: data.address.trim(),
+
+    state: data.state.trim(),
+
+    sourceId: data.sourceId,
+
+    statusId: data.statusId,
+
+    ownerId: data.ownerId || null,
+
+    rating: data.rating || null,
+
+    score:
+      data.score !== undefined && data.score !== null
+        ? Number(data.score)
+        : null,
+
+    expectedValue:
+      data.expectedValue !== undefined &&
+      data.expectedValue !== null
+        ? Number(data.expectedValue)
+        : null,
+
+    nextFollowUpAt: data.nextFollowUpAt || null,
+
+    lastContactedAt: data.lastContactedAt || null,
+
+    convertedAt,
+
+    lostReasonId,
+
+    customFields: data.customFields || {},
+
+    followUps: data.followUps || []
+  };
+
+
+  // -----------------------------------------
+  // 11. UPDATE DATABASE
+  // -----------------------------------------
+
+  return await updateLeadById(id, updateData);
 };
 
 
 // =================== DELETE LEAD ===================
 
+
 export const deleteLead = async (id) => {
-  if (!id || Number.isNaN(Number(id))) {
-    throw new Error("Valid lead id is required");
+  const leadId = Number(id);
+
+  if (!Number.isInteger(leadId) || leadId <= 0) {
+    throw new Error("Invalid lead ID");
   }
 
-  const existingLead = await getLeadById(id);
+  return await deleteLeadById(leadId);
+};
+export const getLeads = async () => {
+  return await getAllLeads();
+};
+// =================== RESTORE LEAD ===================
+export const restoreLead = async (id) => {
+  const leadId = Number(id);
 
-  if (!existingLead) {
-    throw new Error("Lead not found");
+  if (!Number.isInteger(leadId) || leadId <= 0) {
+    throw new Error("Invalid lead ID");
   }
 
-  return await deleteLeadById(id);
+  return await restoreLeadById(leadId);
 };

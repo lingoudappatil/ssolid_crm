@@ -1,3 +1,4 @@
+//server/routes/leadRoutes.js
 import express from "express";
 
 import {
@@ -5,6 +6,7 @@ import {
   getAll,
   update,
   remove,
+  restore,
   bulkImport
 } from "../controllers/leadController.js";
 
@@ -28,5 +30,8 @@ router.delete("/:id", remove);
 
 // POST /api/leads/bulk-import
 router.post("/bulk-import", bulkImport);
+
+// POST /api/leads/:id/restore
+router.post("/:id/restore", restore);
 
 export default router;

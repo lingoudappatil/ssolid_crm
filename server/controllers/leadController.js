@@ -1,8 +1,11 @@
+//server/controllers/leadController.js
+// =================== IMPORTS ===================
 import {
   addLead,
   getLeads,
   updateLead,
   deleteLead,
+    restoreLead,
     bulkImportLeads 
 } from "../services/leadService.js";
 
@@ -120,6 +123,30 @@ export const bulkImport = async (req, res) => {
     console.error("Error importing leads in bulk:", error);
 
     res.status(500).json({
+      error: error.message
+    });
+  }
+};
+// =================== RESTORE LEAD ===================
+export const restore = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const lead = await restoreLead(id);
+
+    return res.status(200).json({
+      message: "Lead restored successfully!",
+      lead
+    });
+  } catch (error) {
+    console.error("Error restoring lead:", error);
+
+    const statusCode =
+      error.message === "Archived lead not found" ? 404 :
+      error.message === "Invalid lead ID" ? 400 :
+      500;
+
+    return res.status(statusCode).json({
       error: error.message
     });
   }

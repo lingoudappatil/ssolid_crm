@@ -1,3 +1,4 @@
+//server/index.js
 // =================== IMPORTS ===================
 import express from "express";
 import bodyParser from "body-parser";
@@ -18,6 +19,7 @@ import authRoutes from "./routes/authRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import orderRoutes from "./routes/orders.js";
+import leadMasterRoutes from "./routes/leadMasterRoutes.js";
 
 
 // Config
@@ -51,6 +53,8 @@ app.use("/api/followups", followUpRoutes);
 app.use("/api/quotations", quotationRoutes);
 app.use("/api/leads", leadRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/lead-masters", leadMasterRoutes);
+
 
 // =================== FRONTEND DEPLOYMENT ===================
 
