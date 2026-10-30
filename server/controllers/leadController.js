@@ -3,6 +3,7 @@
 import {
   addLead,
   getLeads,
+  getArchivedLeads,
   updateLead,
   deleteLead,
     restoreLead,
@@ -52,6 +53,18 @@ export const getAll = async (req, res) => {
   }
 };
 
+export const getArchived = async (req, res) => {
+  try {
+    const leads = await getArchivedLeads();
+    res.status(200).json(leads);
+  } catch (error) {
+    console.error("Error fetching archived leads:", error);
+    res.status(500).json({
+      error: "Failed to fetch archived leads"
+    });
+  }
+};
+
 
 // =================== UPDATE LEAD ===================
 
@@ -68,7 +81,10 @@ export const update = async (req, res) => {
   } catch (error) {
     console.error("Error updating lead:", error);
 
-    const statusCode = error.message === "Lead not found" ? 404 : 400;
+    const statusCode =
+      error.statusCode === 400 || error.statusCode === 404
+        ? error.statusCode
+        : 500;
 
     res.status(statusCode).json({
       error: error.message
@@ -92,7 +108,10 @@ export const remove = async (req, res) => {
   } catch (error) {
     console.error("Error deleting lead:", error);
 
-    const statusCode = error.message === "Lead not found" ? 404 : 400;
+    const statusCode =
+      error.statusCode === 400 || error.statusCode === 404
+        ? error.statusCode
+        : 500;
 
     res.status(statusCode).json({
       error: error.message
@@ -142,9 +161,9 @@ export const restore = async (req, res) => {
     console.error("Error restoring lead:", error);
 
     const statusCode =
-      error.message === "Archived lead not found" ? 404 :
-      error.message === "Invalid lead ID" ? 400 :
-      500;
+      error.statusCode === 400 || error.statusCode === 404
+        ? error.statusCode
+        : 500;
 
     return res.status(statusCode).json({
       error: error.message

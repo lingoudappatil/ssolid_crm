@@ -2,17 +2,37 @@
 // =================== LEAD SERVICE ===================
 import {
   createLead,
+  getCurrentLeadStatusById,
   getLeadById,
   updateLeadById,
   getAllLeads,
+  getArchivedLeads as getArchivedLeadsFromRepository,
   deleteLeadById,
   restoreLeadById,
   bulkCreateLeads
 } from "../repositories/leadRepository.js";
 
 import {
-  getLeadStatusById
+  getLeadStatusById,
+  getLeadLostReasonById
 } from "../repositories/leadMasterRepository.js";
+
+const createLeadUpdateError = (message, statusCode = 400) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const allowedStatusTransitions = {
+  NEW: ["ASSIGNED", "CONTACTED", "QUALIFIED", "NURTURING", "LOST"],
+  ASSIGNED: ["CONTACTED", "QUALIFIED", "NURTURING", "LOST"],
+  CONTACTED: ["QUALIFIED", "NURTURING", "CONVERTED", "LOST"],
+  QUALIFIED: ["NURTURING", "CONVERTED", "LOST"],
+  NURTURING: ["CONTACTED", "QUALIFIED", "CONVERTED", "LOST"],
+  CONVERTED: [],
+  LOST: ["CONTACTED", "QUALIFIED", "NURTURING"]
+};
+
 // =================== CREATE LEAD ===================
 
 export const addLead = async ({
@@ -298,31 +318,31 @@ export const updateLead = async (id, data) => {
   // -----------------------------------------
 
   if (!data.name || !data.name.trim()) {
-    throw new Error("Lead name is required");
+    throw createLeadUpdateError("Lead name is required");
   }
 
   if (!data.email || !data.email.trim()) {
-    throw new Error("Email is required");
+    throw createLeadUpdateError("Email is required");
   }
 
   if (!data.phone || !data.phone.trim()) {
-    throw new Error("Phone is required");
+    throw createLeadUpdateError("Phone is required");
   }
 
   if (!data.address || !data.address.trim()) {
-    throw new Error("Address is required");
+    throw createLeadUpdateError("Address is required");
   }
 
   if (!data.state || !data.state.trim()) {
-    throw new Error("State is required");
+    throw createLeadUpdateError("State is required");
   }
 
   if (!data.sourceId) {
-    throw new Error("Lead source is required");
+    throw createLeadUpdateError("Lead source is required");
   }
 
   if (!data.statusId) {
-    throw new Error("Lead status is required");
+    throw createLeadUpdateError("Lead status is required");
   }
 
 
@@ -333,7 +353,7 @@ export const updateLead = async (id, data) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!emailRegex.test(data.email.trim())) {
-    throw new Error("Invalid email format");
+    throw createLeadUpdateError("Invalid email format");
   }
 
 
@@ -344,13 +364,29 @@ export const updateLead = async (id, data) => {
   const status = await getLeadStatusById(data.statusId);
 
   if (!status) {
-    throw new Error("Invalid lead status");
+    throw createLeadUpdateError("Invalid lead status");
   }
 
   if (!status.is_active) {
-    throw new Error("Selected lead status is inactive");
+    throw createLeadUpdateError("Selected lead status is inactive");
   }
 
+  const currentLead = await getCurrentLeadStatusById(id);
+
+  if (!currentLead) {
+    throw createLeadUpdateError("Lead not found", 404);
+  }
+
+  if (
+    currentLead.statusCode !== status.code &&
+    !(allowedStatusTransitions[currentLead.statusCode] || []).includes(
+      status.code
+    )
+  ) {
+    throw createLeadUpdateError(
+      `Status transition from ${currentLead.statusCode} to ${status.code} is not allowed`
+    );
+  }
 
   // -----------------------------------------
   // 4. STATUS = LOST
@@ -358,9 +394,17 @@ export const updateLead = async (id, data) => {
   // -----------------------------------------
 
   if (status.code === "LOST" && !data.lostReasonId) {
-    throw new Error(
+    throw createLeadUpdateError(
       "Lost reason is required when lead status is Lost"
     );
+  }
+
+  if (status.code === "LOST") {
+    const lostReason = await getLeadLostReasonById(data.lostReasonId);
+
+    if (!lostReason) {
+      throw createLeadUpdateError("Invalid or inactive lost reason");
+    }
   }
 
 
@@ -384,7 +428,7 @@ export const updateLead = async (id, data) => {
     data.rating &&
     !["Cold", "Warm", "Hot"].includes(data.rating)
   ) {
-    throw new Error(
+    throw createLeadUpdateError(
       "Rating must be Cold, Warm, or Hot"
     );
   }
@@ -397,9 +441,11 @@ export const updateLead = async (id, data) => {
   if (
     data.score !== undefined &&
     data.score !== null &&
-    (Number(data.score) < 0 || Number(data.score) > 100)
+    (Number.isNaN(Number(data.score)) ||
+      Number(data.score) < 0 ||
+      Number(data.score) > 100)
   ) {
-    throw new Error(
+    throw createLeadUpdateError(
       "Lead score must be between 0 and 100"
     );
   }
@@ -412,9 +458,10 @@ export const updateLead = async (id, data) => {
   if (
     data.expectedValue !== undefined &&
     data.expectedValue !== null &&
-    Number(data.expectedValue) < 0
+    (Number.isNaN(Number(data.expectedValue)) ||
+      Number(data.expectedValue) < 0)
   ) {
-    throw new Error(
+    throw createLeadUpdateError(
       "Expected value cannot be negative"
     );
   }
@@ -427,7 +474,7 @@ export const updateLead = async (id, data) => {
   let convertedAt = data.convertedAt || null;
 
   if (status.code === "CONVERTED") {
-    convertedAt = convertedAt || new Date();
+    convertedAt = currentLead.convertedAt || convertedAt || new Date();
   }
 
 
@@ -493,7 +540,7 @@ export const updateLead = async (id, data) => {
   // 11. UPDATE DATABASE
   // -----------------------------------------
 
-  return await updateLeadById(id, updateData);
+  return await updateLeadById(id, updateData, currentLead.statusId);
 };
 
 
@@ -504,7 +551,7 @@ export const deleteLead = async (id) => {
   const leadId = Number(id);
 
   if (!Number.isInteger(leadId) || leadId <= 0) {
-    throw new Error("Invalid lead ID");
+    throw createLeadUpdateError("Invalid lead ID");
   }
 
   return await deleteLeadById(leadId);
@@ -512,12 +559,17 @@ export const deleteLead = async (id) => {
 export const getLeads = async () => {
   return await getAllLeads();
 };
+
+export const getArchivedLeads = async () => {
+  return await getArchivedLeadsFromRepository();
+};
+
 // =================== RESTORE LEAD ===================
 export const restoreLead = async (id) => {
   const leadId = Number(id);
 
   if (!Number.isInteger(leadId) || leadId <= 0) {
-    throw new Error("Invalid lead ID");
+    throw createLeadUpdateError("Invalid lead ID");
   }
 
   return await restoreLeadById(leadId);

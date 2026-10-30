@@ -1,31 +1,146 @@
 //client/src/Components/Leads/AddLead.js
-import React, { useContext, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSettings } from "../../context/SettingsContext";
-const AddLead = ({ onLeadAdded }) => {
-  const leadSources = ["Friend", "Walk In", "Social Media", "Other"];
+const AddLead = ({ onLeadAdded, onAdded }) => {
   const token = localStorage.getItem("token");
   const { moduleSettings: settings } = useSettings();
   const customFields = settings?.customFields?.Lead || [];
 
+  const [leadSources, setLeadSources] = useState([]);
+  const [leadStatuses, setLeadStatuses] = useState([]);
+  const [loadingMasters, setLoadingMasters] = useState(true);
+  const [masterError, setMasterError] = useState("");
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
     state: "",
-    source: "",
+    sourceId: "",
+    statusId: "",
     followUpDate: "",
     followUpTime: "",
     followUpRemark: "",
     ...Object.fromEntries(customFields.map(field => [field.label, ""]))
   });
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadMasterData = async () => {
+      setLoadingMasters(true);
+      setMasterError("");
+
+      try {
+        const base = (process.env.REACT_APP_API_URL || "http://localhost:5000")
+          .replace(/\/$/, "");
+        const [statusResponse, sourceResponse] = await Promise.all([
+          fetch(`${base}/api/lead-masters/statuses`, {
+            signal: controller.signal
+          }),
+          fetch(`${base}/api/lead-masters/sources`, {
+            signal: controller.signal
+          })
+        ]);
+        const [statuses, sources] = await Promise.all([
+          statusResponse.json(),
+          sourceResponse.json()
+        ]);
+
+        if (!statusResponse.ok) {
+          throw new Error(statuses.error || "Failed to load lead statuses");
+        }
+        if (!sourceResponse.ok) {
+          throw new Error(sources.error || "Failed to load lead sources");
+        }
+        if (!Array.isArray(statuses) || !Array.isArray(sources)) {
+          throw new Error("The server returned invalid lead master data");
+        }
+
+        const activeStatuses = statuses.filter(
+          (status) => status.is_active === 1 || status.is_active === true
+        );
+        const activeSources = sources.filter(
+          (source) => source.is_active === 1 || source.is_active === true
+        );
+        const newStatus = activeStatuses.find(
+          (status) =>
+            typeof status.code === "string" &&
+            status.code.trim().toUpperCase() === "NEW"
+        );
+        if (!newStatus) {
+          setLeadStatuses(activeStatuses);
+          setLeadSources(activeSources);
+          throw new Error(
+            "The active NEW lead status is unavailable. Lead creation is disabled until it is configured."
+          );
+        }
+        if (activeSources.length === 0) {
+          setLeadStatuses(activeStatuses);
+          setLeadSources(activeSources);
+          throw new Error(
+            "No active lead sources are available. Lead creation is disabled until a source is configured."
+          );
+        }
+
+        setLeadStatuses(activeStatuses);
+        setLeadSources(activeSources);
+        setFormData((current) => ({
+          ...current,
+          statusId: String(newStatus.id)
+        }));
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Lead master data error:", error);
+          setMasterError(error.message || "Failed to load lead master data");
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingMasters(false);
+        }
+      }
+    };
+
+    loadMasterData();
+    return () => controller.abort();
+  }, []);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormError("");
+    setFormData((current) => ({
+      ...current,
+      [e.target.name]: e.target.value
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (saving || loadingMasters) return;
+    setFormError("");
+
+    if (masterError) {
+      setFormError(masterError);
+      return;
+    }
+
+    const requiredFields = ["name", "email", "phone", "address", "state"];
+    const missingField = requiredFields.find(
+      (field) => !String(formData[field] || "").trim()
+    );
+    if (missingField) {
+      setFormError(`${missingField[0].toUpperCase()}${missingField.slice(1)} is required.`);
+      return;
+    }
+    if (!leadSources.some((source) => String(source.id) === formData.sourceId)) {
+      setFormError("Select a valid lead source.");
+      return;
+    }
+    if (!leadStatuses.some((status) => String(status.id) === formData.statusId)) {
+      setFormError("Select a valid lead status.");
+      return;
+    }
 
     // Extract custom field values
     const customFieldValues = {};
@@ -39,7 +154,8 @@ const AddLead = ({ onLeadAdded }) => {
       phone: formData.phone,
       address: formData.address,
       state: formData.state,
-      source: formData.source,
+      sourceId: formData.sourceId,
+      statusId: formData.statusId,
       followUps: [
         {
           date: formData.followUpDate,
@@ -50,8 +166,10 @@ const AddLead = ({ onLeadAdded }) => {
       customFields: customFieldValues // Add custom fields to payload
     };
 
+    setSaving(true);
     try {
-      const base = process.env.REACT_APP_API_URL || "http://localhost:5000";
+      const base = (process.env.REACT_APP_API_URL || "http://localhost:5000")
+        .replace(/\/$/, "");
       const response = await fetch(`${base}/api/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" 
@@ -70,16 +188,27 @@ const AddLead = ({ onLeadAdded }) => {
         phone: "",
         address: "",
         state: "",
-        Source: "",
+        sourceId: "",
+        statusId: String(
+          leadStatuses.find(
+            (status) =>
+              typeof status.code === "string" &&
+              status.code.trim().toUpperCase() === "NEW"
+          )?.id ?? ""
+        ),
         followUpDate: "",
         followUpTime: "",
         followUpRemark: "",
         ...Object.fromEntries(customFields.map(field => [field.label, ""]))
       });
       
-      if (onLeadAdded) onLeadAdded();
+      const refreshLeadList = onLeadAdded || onAdded;
+      if (refreshLeadList) await refreshLeadList();
     } catch (error) {
-      alert(`❌ ${error.message}`);
+      console.error("Lead creation error:", error);
+      setFormError(error.message || "Failed to add lead");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -148,6 +277,15 @@ const AddLead = ({ onLeadAdded }) => {
     <div className="add-form p-6">
       <form onSubmit={handleSubmit} className="max-w-6xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">➕ Add Lead</h2>
+        {loadingMasters && (
+          <p role="status">Loading lead sources and statuses...</p>
+        )}
+        {masterError && (
+          <p role="alert" style={{ color: "#842029" }}>{masterError}</p>
+        )}
+        {formError && (
+          <p role="alert" style={{ color: "#842029" }}>{formError}</p>
+        )}
 
         <div className="add-form-sections">
           {/* Fixed Fields Section */}
@@ -220,15 +358,33 @@ const AddLead = ({ onLeadAdded }) => {
               <div className="form-group">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
                 <select
-                  name="Source"
-                  value={formData.Source}
+                  name="sourceId"
+                  value={formData.sourceId}
                   onChange={handleChange}
                   className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
+                  disabled={loadingMasters || Boolean(masterError) || saving}
                 >
                   <option value="">Select Source Type</option>
-                  {leadSources.map((src, i) => (
-                    <option key={i} value={src}>{src}</option>
+                  {leadSources.map((source) => (
+                    <option key={source.id} value={source.id}>{source.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  name="statusId"
+                  value={formData.statusId}
+                  onChange={handleChange}
+                  className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  disabled={loadingMasters || Boolean(masterError) || saving}
+                >
+                  <option value="">Select Status</option>
+                  {leadStatuses.map((status) => (
+                    <option key={status.id} value={status.id}>{status.name}</option>
                   ))}
                 </select>
               </div>
@@ -301,9 +457,10 @@ const AddLead = ({ onLeadAdded }) => {
         <div className="mt-8 text-center">
           <button 
             type="submit" 
+            disabled={saving || loadingMasters || Boolean(masterError)}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transform hover:-translate-y-0.5 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
           >
-            Save Lead
+            {saving ? "Saving..." : "Save Lead"}
           </button>
         </div>
       </form>

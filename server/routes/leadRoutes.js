@@ -4,6 +4,7 @@ import express from "express";
 import {
   create,
   getAll,
+  getArchived,
   update,
   remove,
   restore,
@@ -19,6 +20,9 @@ router.post("/", create);
 
 // GET /api/leads
 router.get("/", getAll);
+
+// GET /api/leads/archived
+router.get("/archived", getArchived);
 
 
 // PUT /api/leads/:id

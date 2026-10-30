@@ -41,6 +41,25 @@ export const getLeadStatusById = async (statusId) => {
   return rows[0] || null;
 };
 
+export const getLeadLostReasonById = async (lostReasonId) => {
+  const [rows] = await pool.execute(
+    `
+    SELECT
+      id,
+      name,
+      code,
+      is_active
+    FROM lead_lost_reasons
+    WHERE id = ?
+      AND is_active = 1
+    LIMIT 1
+    `,
+    [lostReasonId]
+  );
+
+  return rows[0] || null;
+};
+
 
 // Your existing functions below
 export const getAllLeadSources = async () => {

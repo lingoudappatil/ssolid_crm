@@ -1,6 +1,36 @@
 // server/repositories/leadRepository.js
 import pool from "../config/db.js";
 
+export const getCurrentLeadStatusById = async (id) => {
+  const [rows] = await pool.execute(
+    `
+      SELECT
+        l.id AS lead_id,
+        l.status_id,
+        ls.code AS status_code,
+        l.converted_at
+      FROM leads l
+      INNER JOIN lead_statuses ls
+        ON l.status_id = ls.id
+      WHERE l.id = ?
+        AND l.is_deleted = 0
+      LIMIT 1
+    `,
+    [id]
+  );
+
+  if (!rows.length) {
+    return null;
+  }
+
+  return {
+    id: rows[0].lead_id,
+    statusId: rows[0].status_id,
+    statusCode: rows[0].status_code,
+    convertedAt: rows[0].converted_at
+  };
+};
+
 // =================== CREATE LEAD ===================
 
 export const createLead = async ({
@@ -254,7 +284,7 @@ WHERE l.id = ?
       SELECT
         id,
         lead_id,
-        follow_up_date,
+        DATE_FORMAT(follow_up_date, '%Y-%m-%d') AS follow_up_date,
         follow_up_time,
         remark
       FROM lead_followups
@@ -331,28 +361,40 @@ WHERE l.id = ?
 
 // =================== UPDATE LEAD ===================
 
-export const updateLeadById = async (id, data) => {
+export const updateLeadById = async (id, data, expectedCurrentStatusId) => {
   const connection = await pool.getConnection();
 
   try {
     await connection.beginTransaction();
 
     // -----------------------------------------
-    // Check lead exists
+    // Lock the active lead so it cannot be archived during this update.
     // -----------------------------------------
 
     const [existingRows] = await connection.execute(
       `
-      SELECT id
+      SELECT id, status_id
       FROM leads
       WHERE id = ?
+        AND is_deleted = 0
       LIMIT 1
+      FOR UPDATE
       `,
       [id]
     );
 
     if (existingRows.length === 0) {
-      throw new Error("Lead not found");
+      const error = new Error("Lead not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (existingRows[0].status_id !== expectedCurrentStatusId) {
+      const error = new Error(
+        "Lead status changed while updating; please reload and try again"
+      );
+      error.statusCode = 400;
+      throw error;
     }
 
 
@@ -371,7 +413,9 @@ export const updateLeadById = async (id, data) => {
     );
 
     if (sourceRows.length === 0) {
-      throw new Error("Invalid lead source");
+      const error = new Error("Invalid lead source");
+      error.statusCode = 400;
+      throw error;
     }
 
     const sourceName = sourceRows[0].name;
@@ -386,13 +430,16 @@ export const updateLeadById = async (id, data) => {
       SELECT id, name
       FROM lead_statuses
       WHERE id = ?
+        AND is_active = 1
       LIMIT 1
       `,
       [data.statusId]
     );
 
     if (statusRows.length === 0) {
-      throw new Error("Invalid lead status");
+      const error = new Error("Invalid or inactive lead status");
+      error.statusCode = 400;
+      throw error;
     }
 
     const statusName = statusRows[0].name;
@@ -434,6 +481,7 @@ export const updateLeadById = async (id, data) => {
         custom_fields = ?
 
       WHERE id = ?
+        AND is_deleted = 0
       `,
       [
         data.name,
@@ -536,7 +584,7 @@ export const updateLeadById = async (id, data) => {
 
 // =================== GET ALL LEADS ===================
 
-export const getAllLeads = async () => {
+const getLeadsByDeletedStatus = async (isDeleted) => {
   const [leads] = await pool.execute(`
     SELECT
       l.id,
@@ -603,16 +651,16 @@ export const getAllLeads = async () => {
 
     LEFT JOIN lead_lost_reasons lr
       ON l.lost_reason_id = lr.id
-    WHERE l.is_deleted = 0
+    WHERE l.is_deleted = ?
 
     ORDER BY l.id DESC
-  `);
+  `, [isDeleted]);
 
   const [followUps] = await pool.execute(`
     SELECT
       id,
       lead_id,
-      follow_up_date,
+      DATE_FORMAT(follow_up_date, '%Y-%m-%d') AS follow_up_date,
       follow_up_time,
       remark
     FROM lead_followups
@@ -700,6 +748,10 @@ export const getAllLeads = async () => {
   return result;
 };
 
+export const getAllLeads = async () => getLeadsByDeletedStatus(0);
+
+export const getArchivedLeads = async () => getLeadsByDeletedStatus(1);
+
 
 // =================== DELETE LEAD ===================
 
@@ -710,17 +762,25 @@ export const deleteLeadById = async (id) => {
   try {
     await connection.beginTransaction();
 
-    // Check whether the lead exists and is active
+    // Lock the row before distinguishing a missing lead from a duplicate archive.
     const [rows] = await connection.execute(
-      `SELECT id
+      `SELECT id, is_deleted
        FROM leads
-       WHERE id = ? AND is_deleted = 0
+       WHERE id = ?
        FOR UPDATE`,
       [id]
     );
 
     if (rows.length === 0) {
-      throw new Error("Lead not found or already archived");
+      const error = new Error("Lead not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (rows[0].is_deleted) {
+      const error = new Error("Lead is already archived");
+      error.statusCode = 400;
+      throw error;
     }
 
     // Archive the lead instead of permanently deleting it
@@ -822,19 +882,26 @@ export const restoreLeadById = async (id) => {
   try {
     await connection.beginTransaction();
 
-    // Find the lead only if it is currently archived
     const [rows] = await connection.execute(
       `
-      SELECT id
+      SELECT id, is_deleted
       FROM leads
-      WHERE id = ? AND is_deleted = 1
+      WHERE id = ?
       FOR UPDATE
       `,
       [id]
     );
 
     if (rows.length === 0) {
-      throw new Error("Archived lead not found");
+      const error = new Error("Lead not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (!rows[0].is_deleted) {
+      const error = new Error("Lead is already active");
+      error.statusCode = 400;
+      throw error;
     }
 
     // Restore the existing record
